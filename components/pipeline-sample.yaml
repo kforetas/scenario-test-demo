@@ -55,6 +55,8 @@ spec:
       params:
         - name: target-ns
           value: "demo-st-$(params.test-id)"
+        - name: test-id
+          value: $(params.test-id)  
 
     - name: run-system-test
       runAfter: 
