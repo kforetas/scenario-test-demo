@@ -36,4 +36,4 @@ spec:
         # 4. SQLの実行（リポジトリ内のファイルを指定）
         # 例: system-tests/sql/init.sql にテーブル定義とINSERT文がある想定
         echo "Running init.sql..."
-        psql -h postgres.$(params.target-ns).svc -U postgres -f testcases/$(params.test-id)/sql/init.sql
+        psql -h postgres.$(params.target-ns).svc -U postgres -f test/testcases/$(params.test-id)/sql/init.sql

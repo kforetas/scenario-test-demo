@@ -31,6 +31,8 @@ spec:
           value: main
         - name: DELETE_EXISTING
           value: 'true'
+        - name: SUBDIRECTORY
+          value: "test"
       workspaces:
         - name: output
           workspace: shared-data
