@@ -1,0 +1,5 @@
+resources:
+  - task-create-ephemeral-ns.yaml
+  - task-delete-ephemeral-ns.yaml
+  - task-dummy-test.yaml
+  - pipeline-sample.yaml

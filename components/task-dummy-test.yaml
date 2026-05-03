@@ -1,0 +1,32 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: dummy-system-test
+  namespace: tekton-demo
+spec:
+  params:
+    - name: target-ns
+      description: "テスト対象の名前空間"
+  steps:
+    - name: deploy-and-wait
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        echo "Testing in namespace: $(params.target-ns)"
+        
+        # 1. テスト用のダミーPodを作成
+        oc run test-app --image=nginx -n $(params.target-ns)
+        
+        # 2. PodがRunning（Ready）になるのを待機 (最大2分)
+        echo "Waiting for Pod to be ready..."
+        oc wait --for=condition=Ready pod/test-app -n $(params.target-ns) --timeout=120s
+        
+        # 3. 簡易的な疎通確認 (Pod内で自分自身にcurl)
+        echo "Pod is ready. Running connectivity check..."
+        oc exec test-app -n $(params.target-ns) -- curl -s localhost:80 > /dev/null
+        
+        if [ $? -eq 0 ]; then
+          echo "✅ Connectivity check passed!"
+        else
+          echo "❌ Connectivity check failed!"
+          exit 1
+        fi

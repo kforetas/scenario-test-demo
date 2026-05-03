@@ -1,0 +1,14 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: delete-ephemeral-ns
+  namespace: tekton-demo
+spec:
+  params:
+    - name: ns-name
+  steps:
+    - name: delete-ns
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        echo "Deleting ephemeral namespace: $(params.ns-name)"
+        oc delete project $(params.ns-name) --wait=false

@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: ephemeral-test-pipeline
+  namespace: tekton-demo
+spec:
+  params:
+    - name: test-id
+      default: "test-001"
+  tasks:
+    - name: setup-env
+      taskRef:
+        name: create-ephemeral-ns
+      params:
+        - name: ns-name
+          value: "demo-st-$(params.test-id)"
+
+    - name: run-system-test
+      runAfter: 
+        - setup-env
+      taskRef:
+        name: dummy-system-test
+      params:
+        - name: target-ns
+          value: "demo-st-$(params.test-id)"
+
+  finally:
+    - name: cleanup-env
+      taskRef:
+        name: delete-ephemeral-ns
+      params:
+        - name: ns-name
+          value: "demo-st-$(params.test-id)"

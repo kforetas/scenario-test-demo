@@ -1,0 +1,18 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: create-ephemeral-ns
+  namespace: tekton-demo
+spec:
+  params:
+    - name: ns-name
+      description: "作成する使い捨て名前空間の名前"
+  steps:
+    - name: create-ns
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        if oc get project $(params.ns-name) >/dev/null 2>&1; then
+          oc delete project $(params.ns-name) --wait=true
+        fi
+        oc new-project $(params.ns-name)
+        oc label namespace $(params.ns-name) type=ephemeral-test-env
