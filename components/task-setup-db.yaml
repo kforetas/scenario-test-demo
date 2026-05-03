@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: setup-db
+  namespace: tekton-demo
+spec:
+  params:
+    - name: target-ns
+    - name: test-id
+    - name: db-password
+      default: "password"
+  workspaces:
+    - name: source # SQLファイルが格納されているリポジトリ
+  steps:
+    - name: deploy-postgres
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        # 1. PostgreSQL Pod の起動（簡易版）
+        oc run postgres --image=postgres:13 -n $(params.target-ns) --env="POSTGRES_PASSWORD=$(params.db-password)"
+        
+        # 2. Readyになるのを待機
+        echo "Waiting for PostgreSQL to be ready..."
+        oc wait --for=condition=Ready pod/postgres -n $(params.target-ns) --timeout=120s
+
+    - name: init-data
+      image: postgres:13
+      workingDir: $(workspaces.source.path)
+      script: |
+        # 3. DBが接続を許可するまで少し待機（Pod ReadyとDB Readyは時間差があるため）
+        export PGPASSWORD=$(params.db-password)
+        until psql -h postgres.$(params.target-ns).svc -U postgres -c '\l' > /dev/null 2>&1; do
+          echo "Waiting for postgres connection..."
+          sleep 5
+        done
+
+        # 4. SQLの実行（リポジトリ内のファイルを指定）
+        # 例: system-tests/sql/init.sql にテーブル定義とINSERT文がある想定
+        echo "Running init.sql..."
+        psql -h postgres.$(params.target-ns).svc -U postgres -f testcases/$(params.test-id)/sql/init.sql

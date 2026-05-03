@@ -7,17 +7,56 @@ spec:
   params:
     - name: test-id
       default: "test-001"
+    - name: repo-url
+      default: 'https://github.com/kforetas/scenario-test-demo.git'
+      type: string
+
   tasks:
+    - name: git-clone
+      taskRef:
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+        resolver: cluster
+      params:
+        - name: URL
+          value: $(params.repo-url)
+        - name: REVISION
+          value: main
+        - name: DELETE_EXISTING
+          value: 'true'
+      workspaces:
+        - name: output
+          workspace: shared-data
+
     - name: setup-env
+      runAfter: 
+        - git-clone
       taskRef:
         name: create-ephemeral-ns
       params:
         - name: ns-name
           value: "demo-st-$(params.test-id)"
 
-    - name: run-system-test
+    - name: db-init
       runAfter: 
         - setup-env
+      workspaces:
+        - name: source
+          workspace: shared-data
+      taskRef:
+        name: setup-db
+      params:
+        - name: target-ns
+          value: "demo-st-$(params.test-id)"
+
+    - name: run-system-test
+      runAfter: 
+        - db-init
       taskRef:
         name: dummy-system-test
       params:
