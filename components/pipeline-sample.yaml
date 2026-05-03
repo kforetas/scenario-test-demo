@@ -10,7 +10,9 @@ spec:
     - name: repo-url
       default: 'https://github.com/kforetas/scenario-test-demo.git'
       type: string
-
+  workspaces:
+    - name: shared-data
+  
   tasks:
     - name: git-clone
       taskRef:
