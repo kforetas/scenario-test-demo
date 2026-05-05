@@ -94,7 +94,7 @@ spec:
     # Data Entry
     - name: data-entry-shopping
       runAfter:
-        - deploy-online-app
+        - deploy-online-apps
       taskRef:
         name: call-api-from-file
       params:
