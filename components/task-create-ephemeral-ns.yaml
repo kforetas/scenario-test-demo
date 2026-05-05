@@ -13,5 +13,6 @@ spec:
         if oc get project $(params.ns-name) >/dev/null 2>&1; then
           oc delete project $(params.ns-name) --wait=true
         fi
-        oc create namespace $(params.ns-name)
+        #oc create namespace $(params.ns-name)
+        oc new-project $(params.ns-name)
         oc label namespace $(params.ns-name) type=ephemeral-test-env
