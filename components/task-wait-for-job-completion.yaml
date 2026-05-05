@@ -27,6 +27,15 @@ spec:
         grep "job_name:" $FILE_PATH | sed 's/.*: "\(.*\)"/\1/' | while read -r JOB_NAME; do
           echo "⏳ Monitoring Job: ${JOB_NAME} in ${NS}..."
 
+          # --- Jobリソースが作成されるまで最大1分待機 ---
+          RETRY_COUNT=0
+          until oc get job ${JOB_NAME} -n ${NS} &> /dev/null || [ $RETRY_COUNT -eq 12 ]; do
+            echo "  💤 Job resource not found yet. Waiting for ArgoCD to sync next wave... ($RETRY_COUNT)"
+            sleep 5
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+          done
+
+          # Jobが存在する状態になってから oc wait を実行
           # oc wait を使用して Job の完了を待機 (タイムアウトは10分に設定)
           # condition=complete は成功時、condition=failed は失敗時
           if oc wait --for=condition=complete job/${JOB_NAME} -n ${NS} --timeout=600s; then
