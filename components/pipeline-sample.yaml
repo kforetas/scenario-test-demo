@@ -52,7 +52,7 @@ spec:
 
     # --- 環境構築フェーズ --- #
     # --- 03. NameSpace作成 ---
-    - name: setup-env
+    - name: create-namespace
       runAfter: 
         - git-clone
       taskRef:
@@ -64,7 +64,7 @@ spec:
     # --- 04. Database作成 ---
     - name: deploy-database
       runAfter:
-        - setup-env
+        - create-namespace
       taskRef:
         name: argocd-apply-database
       params:
