@@ -14,6 +14,25 @@ spec:
       image: quay.io/openshift/origin-cli:latest
       script: |
         #!/bin/bash
+        # --- 🔍 デバッグセクション開始 ---
+        echo "--- Route Check ---"
+        # 1. Routeが正しく作成されているか確認
+        oc get route -n $(params.namespace-name)
+
+        # 2. アプリのPodがReadyになっているか確認
+        echo "--- Pod Status ---"
+        oc get pod -n $(params.namespace-name)
+
+        # 3. 疎通するまでリトライ (最大2分)
+        echo "--- Connectivity Wait ---"
+        ATTEMPTS=0
+        until [ $(curl -k -s -o /dev/null -w "%{http_code}" ${FULL_URL}) != "000" ] || [ $ATTEMPTS -eq 12 ]; do
+          echo "⏳ Waiting for Route to be reachable... (Attempt: $ATTEMPTS)"
+          sleep 10
+          ATTEMPTS=$((ATTEMPTS + 1))
+        done
+        # --- 🔍 デバッグセクション終了 ---
+
         # 1. クラスタのベースドメインを自動取得
         OPENSHIFT_DOMAIN=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
         
