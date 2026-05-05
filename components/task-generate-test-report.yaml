@@ -1,0 +1,72 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: generate-test-report
+spec:
+  params:
+    - name: pipelinerun-name
+  steps:
+    - name: report
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        PR_NAME=$(params.pipelinerun-name)
+        PR_JSON=$(oc get pipelinerun ${PR_NAME} -o json)
+
+        # 1. 全体時間の計算
+        START_TIME=$(echo "$PR_JSON" | jq -r '.status.startTime // empty')
+        COMP_TIME=$(echo "$PR_JSON" | jq -r '.status.completionTime // empty')
+        
+        # 完了していない（実行中）の場合は現在時刻を使用
+        if [ -z "$COMP_TIME" ]; then COMP_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ"); fi
+
+        if [ -n "$START_TIME" ]; then
+          S_SEC=$(date -d "$START_TIME" +%s)
+          E_SEC=$(date -d "$COMP_TIME" +%s)
+          TOTAL_DIFF=$((E_SEC - S_SEC))
+          TOTAL_DURATION="$((TOTAL_DIFF / 60))m $((TOTAL_DIFF % 60))s"
+        else
+          TOTAL_DURATION="N/A"
+        fi
+
+        # 2. レポートヘッダー出力
+        STATUS=$(echo "$PR_JSON" | jq -r '.status.conditions[0].reason')
+        echo "📊 FINAL TEST REPORT"
+        echo "========================================================="
+        echo " PipelineRun: ${PR_NAME}"
+        echo " Status:      ${STATUS}"
+        echo " Total Time:  ${TOTAL_DURATION}"
+        echo "========================================================="
+        printf "%-30s %-12s %-10s\n" "Task Name" "Result" "Duration"
+        echo "---------------------------------------------------------"
+
+        # 3. 各タスクの解析
+        echo "$PR_JSON" | jq -c '.status.childReferences[]' | while read -r ref; do
+          CHILD_NAME=$(echo $ref | jq -r '.name')
+          TR_JSON=$(oc get taskrun ${CHILD_NAME} -o json)
+          
+          TASK_NAME=$(echo $TR_JSON | jq -r '.metadata.labels["tekton.dev/pipelineTask"] // "unknown"')
+          TASK_RESULT=$(echo $TR_JSON | jq -r '.status.conditions[0].reason // "Pending"')
+          
+          # タスクごとの時間計算
+          T_START=$(echo $TR_JSON | jq -r '.status.startTime // empty')
+          T_END=$(echo $TR_JSON | jq -r '.status.completionTime // empty')
+          
+          if [[ -n "$T_START" && -n "$T_END" ]]; then
+            TS_SEC=$(date -d "$T_START" +%s)
+            TE_SEC=$(date -d "$T_END" +%s)
+            T_DIFF=$((TE_SEC - TS_SEC))
+            T_DUR="${T_DIFF}s"
+          else
+            T_DUR="-"
+          fi
+
+          printf "%-30s %-12s %-10s\n" "$TASK_NAME" "$TASK_RESULT" "$T_DUR"
+
+          # 失敗時の詳細
+          if [[ "$TASK_RESULT" != "Succeeded" && "$TASK_RESULT" != "Completed" && "$TASK_RESULT" != "Running" ]]; then
+            MSG=$(echo $TR_JSON | jq -r '.status.conditions[0].message // "No message"')
+            echo "   ❌ Error: $MSG"
+          fi
+        done
+        echo "========================================================="

@@ -172,4 +172,10 @@ spec:
   finally:
     # --- テスト完了フェーズ --- #
     # --- 12. レポート作成 ---
+    - name: create-report
+      taskRef:
+        name: generate-test-report
+      params:
+        - name: pipelinerun-name
+          value: $(context.pipelineRun.name)
     # --- 13. 通知 ---

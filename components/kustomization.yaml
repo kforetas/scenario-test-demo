@@ -12,6 +12,7 @@ resources:
   - task-wait-for-online-readiness.yaml
   - task-argocd-apply-batch-apps.yaml
   - task-wait-for-job-completion.yaml
+  - task-generate-test-report.yaml
   - pipeline-manual-cleanup.yaml
   - pipeline-simple-test.yaml
   - pvc-efs.yaml
