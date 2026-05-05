@@ -9,6 +9,7 @@ resources:
   - task-call-api-from-file.yaml
   - task-cleanup-complete-env.yaml
   - task-check-db-multi-assert.yaml
+  - task-wait-for-online-readiness.yaml
   - pipeline-manual-cleanup.yaml
   - pipeline-sample.yaml
   - pvc-efs.yaml

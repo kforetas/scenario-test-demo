@@ -98,8 +98,23 @@ spec:
         - name: test-id
           value: "$(params.test-id)"
 
+    # --- 07. オンラインアプリケーションの立ち上がり待ち ---
+    - name: wait-online-ready
+      runAfter:
+        - deploy-online-apps
+      taskRef:
+        name: wait-for-online-readiness
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
+        - name: namespace-name
+          value: "demo-st-$(params.test-id)"
+      workspaces:
+        - name: source
+          workspace: shared-data
+
     # --- テスト実施フェーズ --- #
-    # --- 07. データ投入 ---
+    # --- 08. データ投入 ---
     #- name: data-entry-shopping
     #  runAfter:
     #    - deploy-online-apps
@@ -116,8 +131,8 @@ spec:
     #    - name: source
     #      workspace: shared-data
     
-    # --- 08. バッチ処理実行 ---
-    # --- 09. データ検証（Assert） ---
+    # --- 09. バッチ処理実行 ---
+    # --- 10. データ検証（Assert） ---
     - name: db-multi-assertion
       runAfter:
         - deploy-online-apps 
@@ -134,5 +149,5 @@ spec:
 
   finally:
     # --- テスト完了フェーズ --- #
-    # --- 10. レポート作成 ---
-    # --- 11. 通知 ---
+    # --- 11. レポート作成 ---
+    # --- 12. 通知 ---

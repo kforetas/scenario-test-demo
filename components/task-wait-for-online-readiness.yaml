@@ -1,0 +1,57 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: wait-for-online-readiness
+spec:
+  params:
+    - name: test-id
+    - name: namespace-name
+    - name: config-file-name
+      default: "config.yaml"
+  workspaces:
+    - name: source
+  steps:
+    - name: check-all-targets
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        FILE_PATH="$(workspaces.source.path)/testcases/$(params.test-id)/readiness/$(params.config-file-name)"
+        DOMAIN=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+
+        if [ ! -f "$FILE_PATH" ]; then
+          echo "❌ Readiness config not found: $FILE_PATH"
+          exit 1
+        fi
+
+        # YAMLから api_name と health_path のペアを抽出してループ
+        # ※ 簡易パースのため api_name: "xxx", health_path: "yyy" の形式を想定
+        grep "api_name:" $FILE_PATH | while read -r line; do
+          API_NAME=$(echo $line | sed 's/.*: "\(.*\)"/\1/')
+          # 対応する health_path を取得 (次の行にあると想定)
+          HEALTH_PATH=$(grep -A 1 "$API_NAME" $FILE_PATH | grep "health_path:" | sed 's/.*: "\(.*\)"/\1/')
+          
+          FULL_URL="https://${API_NAME}-$(params.namespace-name).${DOMAIN}${HEALTH_PATH}"
+          
+          echo "🧐 Checking readiness for: ${API_NAME}"
+          echo "📡 URL: ${FULL_URL}"
+
+          ATTEMPTS=0
+          while true; do
+            STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" "${FULL_URL}")
+            
+            # 200, 405, 401, 403 なら「アプリ応答あり」とみなす
+            if [[ "$STATUS" =~ ^(200|405|401|403)$ ]]; then
+              echo "  ✅ ${API_NAME} is UP (Status: ${STATUS})"
+              break
+            fi
+
+            if [[ $ATTEMPTS -eq 15 ]]; then
+              echo "  ❌ Timeout: ${API_NAME} did not become ready (Last Status: ${STATUS})"
+              exit 1
+            fi
+
+            echo "  ⏳ Waiting... (Status: ${STATUS}) - Attempt: ${ATTEMPTS}"
+            sleep 10
+            ATTEMPTS=$((ATTEMPTS + 1))
+          done
+        done
