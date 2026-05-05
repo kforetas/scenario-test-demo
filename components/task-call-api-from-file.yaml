@@ -42,19 +42,25 @@ spec:
           # ステータスコードを取得
           HTTP_STATUS=$(curl -k -s -o /dev/null -w "%{http_code}" "${FULL_URL}")
           
-          # 200番台、あるいは期待するコードが返ってきたらループを抜ける
-          # 000 (接続不可) や 404/503 (準備中) の間はループを継続
-          if [[ "$HTTP_STATUS" == "$OK_CODE" ]]; then
-            echo "✅ Reachable with status $HTTP_STATUS"
+          # 判定ロジックのアップデート
+          # 200(OK) はもちろん、405(Method Not Allowed) も「アプリが応答した」ので成功とみなす
+          if [[ "$HTTP_STATUS" == "200" || "$HTTP_STATUS" == "405" ]]; then
+            echo "✅ Application is alive and responding! (Status: $HTTP_STATUS)"
+            break
+          fi
+
+          # 401(Unauthorized) や 403(Forbidden) もアプリが返しているなら成功とみなしてOK
+          if [[ "$HTTP_STATUS" == "401" || "$HTTP_STATUS" == "403" ]]; then
+            echo "✅ Application is reachable (Security challenge received: $HTTP_STATUS)"
             break
           fi
 
           if [[ $ATTEMPTS -eq $MAX_ATTEMPTS ]]; then
-            echo "❌ Timeout waiting for $FULL_URL (Last status: $HTTP_STATUS)"
+            echo "❌ Timeout: Application is still returning $HTTP_STATUS"
             exit 1
           fi
 
-          echo "⏳ Waiting for app to be ready... (Attempt: $ATTEMPTS, Status: $HTTP_STATUS)"
+          echo "⏳ Waiting for app... (Current Status: $HTTP_STATUS) - Attempt: $ATTEMPTS"
           sleep 10
           ATTEMPTS=$((ATTEMPTS + 1))
         done
