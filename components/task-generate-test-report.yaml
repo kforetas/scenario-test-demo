@@ -13,6 +13,12 @@ spec:
         # kubectl を oc として扱えるように シンボリックリンク を作成
         ln -s /usr/bin/kubectl /usr/local/bin/oc
         
+        # 日付文字列を Alpine の date コマンドが読める形式に変換する関数
+        # "2026-05-05T17:14:36Z" -> "2026-05-05 17:14:36"
+        format_date() {
+          echo "$1" | sed -e 's/T/ /g' -e 's/Z//g'
+        }
+
         PR_NAME=$(params.pipelinerun-name)
         PR_JSON=$(oc get pipelinerun ${PR_NAME} -o json)
 
@@ -24,8 +30,8 @@ spec:
         if [ -z "$COMP_TIME" ]; then COMP_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ"); fi
 
         if [ -n "$START_TIME" ]; then
-          S_SEC=$(date -d "$START_TIME" +%s)
-          E_SEC=$(date -d "$COMP_TIME" +%s)
+          S_SEC=$(date -d "$(format_date $START_TIME)" +%s)
+          E_SEC=$(date -d "$(format_date $COMP_TIME)" +%s)
           TOTAL_DIFF=$((E_SEC - S_SEC))
           TOTAL_DURATION="$((TOTAL_DIFF / 60))m $((TOTAL_DIFF % 60))s"
         else
