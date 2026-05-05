@@ -24,6 +24,8 @@ spec:
     
     # --- 02. テストシナリオの取得 ---
     - name: git-clone
+      runAfter: 
+        - pre-cleanup
       taskRef:
         params:
           - name: kind
