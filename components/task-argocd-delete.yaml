@@ -1,0 +1,26 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: argocd-delete-application
+spec:
+  params:
+    - name: application-name
+      description: "削除するArgoCD Application名"
+    - name: argocd-namespace
+      default: "openshift-gitops"
+  steps:
+    - name: delete-app
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        APP_NAME=$(params.application-name)
+        NS=$(params.argocd-namespace)
+
+        echo "🗑️ Deleting ArgoCD Application: ${APP_NAME} in namespace: ${NS}"
+        
+        if oc get application ${APP_NAME} -n ${NS} >/dev/null 2>&1; then
+          # Applicationを削除
+          oc delete application ${APP_NAME} -n ${NS} --wait=true
+          echo "✅ Application ${APP_NAME} deleted."
+        else
+          echo "⚠️ Application ${APP_NAME} not found, skipping."
+        fi

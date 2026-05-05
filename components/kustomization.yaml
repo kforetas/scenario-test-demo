@@ -3,5 +3,6 @@ resources:
   - task-delete-ephemeral-ns.yaml
   - task-dummy-test.yaml
   - task-setup-db.yaml
+  - task-argocd-apply-database.yaml
   - pipeline-sample.yaml
   - pvc-efs.yaml

@@ -47,6 +47,24 @@ spec:
         - name: ns-name
           value: "demo-st-$(params.test-id)"
 
+    - name: run-pod-test
+      runAfter: 
+        - setup-env
+      taskRef:
+        name: dummy-system-test
+      params:
+        - name: target-ns
+          value: "demo-st-$(params.test-id)"
+
+    - name: deploy-postgres
+      runAfter:
+        - run-pod-test
+      taskRef:
+        name: argocd-apply-database
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
+
     #- name: db-init
     #  runAfter: 
     #    - setup-env
@@ -61,16 +79,14 @@ spec:
     #    - name: test-id
     #      value: "$(params.test-id)" 
 
-    - name: run-system-test
-      runAfter: 
-        - setup-env
-      taskRef:
-        name: dummy-system-test
-      params:
-        - name: target-ns
-          value: "demo-st-$(params.test-id)"
-
   finally:
+    - name: cleanup-argocd-postgres
+      taskRef:
+        name: argocd-delete-application
+      params:
+        - name: application-name
+          value: "deploy-postgres-demo-st-$(params.test-id)"
+          
     - name: cleanup-env
       taskRef:
         name: delete-ephemeral-ns

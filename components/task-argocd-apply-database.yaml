@@ -1,0 +1,40 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: argocd-apply-database
+spec:
+  params:
+    - name: test-id
+      description: "テストID (例: test-001)"
+    - name: argocd-namespace
+      default: "openshift-gitops"
+  steps:
+    - name: fetch-and-apply
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        # 1. URLの組み立て
+        MANIFEST_URL="https://raw.githubusercontent.com/kforetas/scenario-test-demo-manifest/refs/heads/main/apps/deploy-postgres-demo-st-$(params.test-id).yaml"
+        APP_NAME="deploy-postgres-demo-st-$(params.test-id)"
+        NS=$(params.argocd-namespace)
+
+        echo "🌐 Fetching manifest from: ${MANIFEST_URL}"
+        
+        # 2. curlでマニフェストを取得
+        MANIFEST_CONTENT=$(curl -sL ${MANIFEST_URL})
+        if [ -z "$MANIFEST_CONTENT" ]; then
+          echo "❌ Error: Failed to fetch manifest or manifest is empty."
+          exit 1
+        fi
+
+        # 3. Applicationリソースを作成/更新
+        echo "📄 Applying Application: ${APP_NAME}"
+        echo "${MANIFEST_CONTENT}" | oc apply -f -
+
+        # 4. 同期と完了を待機
+        echo "⏳ Waiting for application ${APP_NAME} to be Synced..."
+        oc wait --for=jsonpath='{.status.sync.status}'=Synced application/${APP_NAME} -n ${NS} --timeout=300s
+
+        echo "⏳ Waiting for application ${APP_NAME} to be Healthy..."
+        oc wait --for=jsonpath='{.status.health.status}'=Healthy application/${APP_NAME} -n ${NS} --timeout=300s
+
+        echo "✅ Application ${APP_NAME} is ready!"
