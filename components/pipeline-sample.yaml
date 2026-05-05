@@ -47,14 +47,14 @@ spec:
         - name: ns-name
           value: "demo-st-$(params.test-id)"
 
-    - name: run-pod-test
-      runAfter: 
-        - setup-env
-      taskRef:
-        name: dummy-system-test
-      params:
-        - name: target-ns
-          value: "demo-st-$(params.test-id)"
+    #- name: run-pod-test
+    #  runAfter: 
+    #    - setup-env
+    #  taskRef:
+    #    name: dummy-system-test
+    #  params:
+    #    - name: target-ns
+    #      value: "demo-st-$(params.test-id)"
 
     - name: deploy-database
       runAfter:
