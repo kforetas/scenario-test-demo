@@ -14,6 +14,24 @@ spec:
       image: quay.io/openshift/origin-cli:latest
       script: |
         #!/bin/bash
+        # 1. クラスタのベースドメインを自動取得
+        OPENSHIFT_DOMAIN=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+        FILE_PATH="$(workspaces.source.path)/testcases/$(params.test-id)/data-entry/$(params.data-file-name)"
+        
+        if [ ! -f "$FILE_PATH" ]; then
+          echo "❌ Data file not found: $FILE_PATH"
+          exit 1
+        fi
+
+        # 2. YAMLからパラメータを抽出
+        API_NAME=$(grep 'api_name:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
+        ENDPOINT_PATH=$(grep 'url_path:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
+        METHOD=$(grep 'method:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
+        OK_CODE=$(grep 'ok_code:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
+        
+        # 3. URLの組み立て
+        FULL_URL="https://${API_NAME}-$(params.namespace-name).${OPENSHIFT_DOMAIN}${ENDPOINT_PATH}"
+
         # --- 🔍 デバッグセクション開始 ---
         echo "--- Route Check ---"
         # 1. Routeが正しく作成されているか確認
@@ -33,25 +51,7 @@ spec:
         done
         # --- 🔍 デバッグセクション終了 ---
 
-        # 1. クラスタのベースドメインを自動取得
-        OPENSHIFT_DOMAIN=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
-        
-        FILE_PATH="$(workspaces.source.path)/testcases/$(params.test-id)/data-entry/$(params.data-file-name)"
-        
-        if [ ! -f "$FILE_PATH" ]; then
-          echo "❌ Data file not found: $FILE_PATH"
-          exit 1
-        fi
-
-        # 2. YAMLからパラメータを抽出
-        API_NAME=$(grep 'api_name:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
-        ENDPOINT_PATH=$(grep 'url_path:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
-        METHOD=$(grep 'method:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
-        OK_CODE=$(grep 'ok_code:' $FILE_PATH | sed 's/.*: "\(.*\)"/\1/')
-        
-        # 3. URLの組み立て
-        FULL_URL="https://${API_NAME}-$(params.namespace-name).${OPENSHIFT_DOMAIN}${ENDPOINT_PATH}"
-        
+        # 4. API投入
         echo "🌐 Using Auto-detected Domain: ${OPENSHIFT_DOMAIN}"
         echo "📡 Target URL: ${FULL_URL}"
 
