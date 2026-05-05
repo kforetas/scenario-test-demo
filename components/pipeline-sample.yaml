@@ -88,8 +88,6 @@ spec:
           value: "deploy-postgres-demo-st-$(params.test-id)"
 
     - name: cleanup-env
-      runAfter:
-        - cleanup-database
       taskRef:
         name: delete-ephemeral-ns
       params:
