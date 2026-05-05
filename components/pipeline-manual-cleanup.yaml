@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: manual-cleanup-pipeline
+spec:
+  params:
+    - name: test-id
+      description: "削除したいテストのIDを入力"
+  tasks:
+    - name: execution-cleanup
+      taskRef:
+        name: cleanup-complete-env
+      params:
+        - name: test-id
+          value: $(params.test-id)

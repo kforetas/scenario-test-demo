@@ -1,0 +1,39 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cleanup-complete-env
+spec:
+  params:
+    - name: test-id
+    - name: argocd-namespace
+      default: "openshift-gitops"
+  steps:
+    - name: delete-resources
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        NS_NAME="demo-st-$(params.test-id)"
+        
+        echo "🧹 Cleaning up environment for: ${NS_NAME}"
+
+        # 1. ArgoCD Applicationの削除 (Online App)
+        APP_ONLINE="deploy-online-apps-${NS_NAME}"
+        if oc get application ${APP_ONLINE} -n $(params.argocd-namespace) &> /dev/null; then
+          echo "🗑️ Deleting ArgoCD Application: ${APP_ONLINE}"
+          oc delete application ${APP_ONLINE} -n $(params.argocd-namespace) --wait=false
+        fi
+
+        # 2. ArgoCD Applicationの削除 (Database)
+        APP_DB="deploy-postgres-${NS_NAME}"
+        if oc get application ${APP_DB} -n $(params.argocd-namespace) &> /dev/null; then
+          echo "🗑️ Deleting ArgoCD Application: ${APP_DB}"
+          oc delete application ${APP_DB} -n $(params.argocd-namespace) --wait=false
+        fi
+
+        # 3. Namespaceの削除
+        if oc get project ${NS_NAME} &> /dev/null; then
+          echo "🗑️ Deleting Namespace: ${NS_NAME}"
+          oc delete project ${NS_NAME} --wait=false
+        fi
+
+        echo "✅ Cleanup request submitted. (Non-blocking)"

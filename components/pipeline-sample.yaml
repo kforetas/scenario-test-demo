@@ -13,6 +13,16 @@ spec:
     - name: shared-data
   
   tasks:
+    # --- 準備フェーズ --- #
+    # --- 01. 前掃除 (Pre-Cleanup) ---
+    - name: pre-cleanup
+      taskRef:
+        name: cleanup-complete-env
+      params:
+        - name: test-id
+          value: $(params.test-id)
+    
+    # --- 02. テストシナリオの取得 ---
     - name: git-clone
       taskRef:
         params:
@@ -38,6 +48,8 @@ spec:
         - name: output
           workspace: shared-data
 
+    # --- 環境構築フェーズ --- #
+    # --- 03. NameSpace作成 ---
     - name: setup-env
       runAfter: 
         - git-clone
@@ -47,6 +59,7 @@ spec:
         - name: ns-name
           value: "demo-st-$(params.test-id)"
 
+    # --- 04. Database作成 ---
     - name: deploy-database
       runAfter:
         - setup-env
@@ -56,6 +69,7 @@ spec:
         - name: test-id
           value: "$(params.test-id)"
 
+    # --- 05. Databaseの初期データ設定 ---
     - name: setup-database
       runAfter:
         - deploy-database
@@ -72,6 +86,7 @@ spec:
         - name: source
           workspace: shared-data
   
+    # --- 06. オンラインアプリケーションの立ち上げ ---
     - name: deploy-online-apps
       runAfter:
         - setup-database
@@ -81,42 +96,28 @@ spec:
         - name: test-id
           value: "$(params.test-id)"
 
-    # --- Custom Area --- #
-    # Data Entry
-    - name: data-entry-shopping
-      runAfter:
-        - deploy-online-apps
-      taskRef:
-        name: call-api-from-file
-      params:
-        - name: test-id
-          value: $(params.test-id)
-        - name: data-file-name
-          value: "shopping_entry.yaml"
-        - name: namespace-name
-          value: "demo-st-$(params.test-id)"
-      workspaces:
-        - name: source
-          workspace: shared-data
+    # --- テスト実施フェーズ --- #
+    # --- 07. データ投入 ---
+    #- name: data-entry-shopping
+    #  runAfter:
+    #    - deploy-online-apps
+    #  taskRef:
+    #    name: call-api-from-file
+    #  params:
+    #    - name: test-id
+    #      value: $(params.test-id)
+    #    - name: data-file-name
+    #      value: "shopping_entry.yaml"
+    #    - name: namespace-name
+    #      value: "demo-st-$(params.test-id)"
+    #  workspaces:
+    #    - name: source
+    #      workspace: shared-data
+    
+    # --- 08. バッチ処理実行 ---
+    # --- 09. データ検証（Assert） ---
 
   finally:
-    - name: delete-online-apps
-      taskRef:
-        name: argocd-delete-application
-      params:
-        - name: application-name
-          value: "deploy-online-apps-demo-st-$(params.test-id)"
-    
-    - name: cleanup-database
-      taskRef:
-        name: argocd-delete-application
-      params:
-        - name: application-name
-          value: "deploy-postgres-demo-st-$(params.test-id)"
-
-    - name: cleanup-env
-      taskRef:
-        name: delete-ephemeral-ns
-      params:
-        - name: ns-name
-          value: "demo-st-$(params.test-id)"
+    # --- テスト完了フェーズ --- #
+    # --- 10. レポート作成 ---
+    # --- 11. 通知 ---
