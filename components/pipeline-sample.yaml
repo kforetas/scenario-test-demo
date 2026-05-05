@@ -135,7 +135,7 @@ spec:
     # --- 10. データ検証（Assert） ---
     - name: db-multi-assertion
       runAfter:
-        - deploy-online-apps 
+        - wait-online-ready 
       taskRef:
         name: check-db-multi-assert
       params:
