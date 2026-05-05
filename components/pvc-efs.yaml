@@ -8,5 +8,5 @@ spec:
   resources:
     requests:
       storage: 2Gi
-    storageClassName: efs-csi
-    volumeMode: Filesystem
+  storageClassName: efs-csi
+  volumeMode: Filesystem
