@@ -1,0 +1,75 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: check-db-multi-assert
+spec:
+  params:
+    - name: test-id
+    - name: target-ns
+    - name: db-service-name
+      default: "postgresql"
+    - name: configmap-name
+      default: "database-params"
+  workspaces:
+    - name: source
+  steps:
+    - name: run-multi-assertion
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        ASSERT_DIR="$(workspaces.source.path)/testcases/$(params.test-id)/assert"
+        
+        if [[ ! -d "$ASSERT_DIR" ]]; then
+          echo "❌ Assertion directory not found: ${ASSERT_DIR}"
+          exit 1
+        fi
+
+        # 1. 接続情報の取得(ConfigMapから)
+        DB_USER=$(oc get configmap $(params.configmap-name) -n $(params.target-ns) -o jsonpath='{.data.DB_USER}')
+        DB_NAME=$(oc get configmap $(params.configmap-name) -n $(params.target-ns) -o jsonpath='{.data.DB_NAME}')
+        export PGPASSWORD=$(oc get configmap $(params.configmap-name) -n $(params.target-ns) -o jsonpath='{.data.DB_PASS}')
+        POD_NAME=$(oc get pod -l app=$(params.db-service-name) -n $(params.target-ns) -o jsonpath='{.items[0].metadata.name}')
+
+        # 2. 以前の実行結果(actual_*.csv)を削除して更地にする
+        echo "🧹 Cleaning up previous results in ${ASSERT_DIR}..."
+        rm -f ${ASSERT_DIR}/actual_*.csv
+
+        FAILED=0
+        cd ${ASSERT_DIR}
+
+        # 3. SQLファイルをループ実行
+        for SQL_FILE in *.sql; do
+          [ -e "$SQL_FILE" ] || continue
+          
+          # 対応する期待値ファイル名を生成 ( .sql -> .expected )
+          BASE_NAME="${SQL_FILE%.sql}"
+          EXPECTED_FILE="${SQL_FILE%.sql}.expected"
+          ACTUAL_FILE="actual_${BASE_NAME}.csv"
+
+          echo "🔎 Testing [${SQL_FILE}]..."
+          
+          if [[ ! -f "$EXPECTED_FILE" ]]; then
+            echo "  ⚠️ Skip: Expected file [${EXPECTED_FILE}] not found."
+            continue
+          fi
+
+          # CSV形式で出力 (実際のファイルをWorkspaceに保存)
+          oc exec -i ${POD_NAME} -n $(params.target-ns) -- \
+            psql -U ${DB_USER} -d ${DB_NAME} --csv -t -f - < ${SQL_FILE} > ${ACTUAL_FILE}
+
+          # 差分比較 (diffの結果はTektonログに流れる)
+          if diff -u ${EXPECTED_FILE} ${ACTUAL_FILE}; then
+            echo "  ✅ Pass: [${SQL_FILE}] matches [${EXPECTED_FILE}]"
+          else
+            echo "  ❌ Fail: [${SQL_FILE}] does not match [${EXPECTED_FILE}]"
+            FAILED=$((FAILED + 1))
+          fi
+        done
+
+        # 4. 判定
+        echo "---------------------------------------"
+        if [[ $FAILED -gt 0 ]]; then
+          echo "🚨 Total $FAILED assertion(s) failed."
+          exit 1
+        fi
+        echo "🎉 All assertions in $(params.test-id) passed!"

@@ -8,6 +8,7 @@ resources:
   - task-argocd-delete.yaml
   - task-call-api-from-file.yaml
   - task-cleanup-complete-env.yaml
+  - task-check-db-multi-assert.yaml
   - pipeline-manual-cleanup.yaml
   - pipeline-sample.yaml
   - pvc-efs.yaml

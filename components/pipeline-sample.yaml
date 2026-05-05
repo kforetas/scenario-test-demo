@@ -118,6 +118,19 @@ spec:
     
     # --- 08. バッチ処理実行 ---
     # --- 09. データ検証（Assert） ---
+    - name: db-multi-assertion
+      runAfter:
+        - deploy-online-apps 
+      taskRef:
+        name: check-db-multi-assert
+      params:
+        - name: test-id
+          value: $(params.test-id)
+        - name: target-ns
+          value: "demo-st-$(params.test-id)"
+      workspaces:
+        - name: source
+          workspace: shared-data
 
   finally:
     # --- テスト完了フェーズ --- #
