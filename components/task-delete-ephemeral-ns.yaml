@@ -2,7 +2,6 @@ apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: delete-ephemeral-ns
-  namespace: tekton-demo
 spec:
   params:
     - name: ns-name

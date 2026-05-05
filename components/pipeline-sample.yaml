@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: ephemeral-test-pipeline
+  name: sample-test-pipeline
 spec:
   params:
     - name: test-id
