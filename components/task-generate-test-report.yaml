@@ -10,8 +10,8 @@ spec:
       image: alpine/k8s:1.29.12
       script: |
         #!/bin/bash
-        # kubectl を oc として扱えるように alias を設定
-        alias oc='kubectl'
+        # kubectl を oc として扱えるように シンボリックリンク を作成
+        ln -s /usr/bin/kubectl /usr/local/bin/oc
         
         PR_NAME=$(params.pipelinerun-name)
         PR_JSON=$(oc get pipelinerun ${PR_NAME} -o json)
