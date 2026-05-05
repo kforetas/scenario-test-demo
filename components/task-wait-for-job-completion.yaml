@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: wait-for-job-completion
+spec:
+  params:
+    - name: test-id
+    - name: namespace-name
+    - name: config-file-name
+      default: "config.yaml"
+  workspaces:
+    - name: source
+  steps:
+    - name: check-jobs
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        FILE_PATH="$(workspaces.source.path)/testcases/$(params.test-id)/batch-readiness/$(params.config-file-name)"
+        NS=$(params.namespace-name)
+
+        if [ ! -f "$FILE_PATH" ]; then
+          echo "❌ Batch readiness config not found: $FILE_PATH"
+          exit 1
+        fi
+
+        # YAMLから job_name を抽出してループ
+        grep "job_name:" $FILE_PATH | sed 's/.*: "\(.*\)"/\1/' | while read -r JOB_NAME; do
+          echo "⏳ Monitoring Job: ${JOB_NAME} in ${NS}..."
+
+          # oc wait を使用して Job の完了を待機 (タイムアウトは10分に設定)
+          # condition=complete は成功時、condition=failed は失敗時
+          if oc wait --for=condition=complete job/${JOB_NAME} -n ${NS} --timeout=600s; then
+            echo "✅ Job ${JOB_NAME} completed successfully."
+          else
+            # complete ではない＝失敗またはタイムアウト
+            echo "🚨 Job ${JOB_NAME} failed or timed out!"
+            oc describe job ${JOB_NAME} -n ${NS}
+            oc logs job/${JOB_NAME} -n ${NS}
+            exit 1
+          fi
+        done

@@ -130,7 +130,7 @@ spec:
           workspace: shared-data
     
     # --- 09. バッチ処理実行 ---
-    - name: run-batch-apps
+    - name: deploy-batch-apps
       runAfter:
         - data-entry
       taskRef:
@@ -139,10 +139,25 @@ spec:
         - name: test-id
           value: "$(params.test-id)"
 
-    # --- 10. データ検証（Assert） ---
+    # --- 10. バッチ処理完了待機 ---
+    - name: wait-batch-complete
+      runAfter:
+        - deploy-batch-apps
+      taskRef:
+        name: wait-for-job-completion
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
+        - name: namespace-name
+          value: "demo-st-$(params.test-id)"
+      workspaces:
+        - name: source
+          workspace: shared-data
+
+    # --- 11. データ検証（Assert） ---
     - name: db-multi-assertion
       runAfter:
-        - run-batch-apps 
+        - wait-batch-complete
       taskRef:
         name: check-db-multi-assert
       params:
@@ -156,5 +171,5 @@ spec:
 
   finally:
     # --- テスト完了フェーズ --- #
-    # --- 11. レポート作成 ---
-    # --- 12. 通知 ---
+    # --- 12. レポート作成 ---
+    # --- 13. 通知 ---
