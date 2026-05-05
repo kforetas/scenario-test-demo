@@ -32,7 +32,9 @@ spec:
         - name: DELETE_EXISTING
           value: 'true'
         - name: SUBDIRECTORY
-          value: "test"
+          value: "$(params.test-id)"
+        - name: SPARSE_CHECKOUT_DIRECTORIES
+          value: "testcases/$(params.test-id)"
       workspaces:
         - name: output
           workspace: shared-data
@@ -46,23 +48,23 @@ spec:
         - name: ns-name
           value: "demo-st-$(params.test-id)"
 
-    - name: db-init
-      runAfter: 
-        - setup-env
-      workspaces:
-        - name: source
-          workspace: shared-data
-      taskRef:
-        name: setup-db
-      params:
-        - name: target-ns
-          value: "demo-st-$(params.test-id)"
-        - name: test-id
-          value: "$(params.test-id)" 
+    #- name: db-init
+    #  runAfter: 
+    #    - setup-env
+    #  workspaces:
+    #    - name: source
+    #      workspace: shared-data
+    #  taskRef:
+    #    name: setup-db
+    #  params:
+    #    - name: target-ns
+    #      value: "demo-st-$(params.test-id)"
+    #    - name: test-id
+    #      value: "$(params.test-id)" 
 
     - name: run-system-test
       runAfter: 
-        - db-init
+        - setup-env
       taskRef:
         name: dummy-system-test
       params:
