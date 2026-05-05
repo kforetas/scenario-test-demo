@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: sample-test-pipeline
+  name: simple-test-pipeline
 spec:
   params:
     - name: test-id
@@ -115,27 +115,26 @@ spec:
 
     # --- テスト実施フェーズ --- #
     # --- 08. データ投入 ---
-    #- name: data-entry-shopping
-    #  runAfter:
-    #    - deploy-online-apps
-    #  taskRef:
-    #    name: call-api-from-file
-    #  params:
-    #    - name: test-id
-    #      value: $(params.test-id)
-    #    - name: data-file-name
-    #      value: "shopping_entry.yaml"
-    #    - name: namespace-name
-    #      value: "demo-st-$(params.test-id)"
-    #  workspaces:
-    #    - name: source
-    #      workspace: shared-data
+    - name: data-entry
+      runAfter:
+        - wait-online-ready
+      taskRef:
+        name: call-api-multi-data-entry
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
+        - name: namespace-name
+          value: "demo-st-$(params.test-id)"
+      workspaces:
+        - name: source
+          workspace: shared-data
     
     # --- 09. バッチ処理実行 ---
+
     # --- 10. データ検証（Assert） ---
     - name: db-multi-assertion
       runAfter:
-        - wait-online-ready 
+        - data-entry 
       taskRef:
         name: check-db-multi-assert
       params:

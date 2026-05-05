@@ -1,0 +1,65 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: call-api-multi-data-entry
+spec:
+  params:
+    - name: test-id
+    - name: namespace-name
+  workspaces:
+    - name: source
+  steps:
+    - name: execute-multi-api-calls
+      image: quay.io/openshift/origin-cli:latest
+      script: |
+        #!/bin/bash
+        # 1. 共通情報の準備
+        OPENSHIFT_DOMAIN=$(oc get ingresses.config/cluster -o jsonpath='{.spec.domain}')
+        DATA_DIR="$(workspaces.source.path)/testcases/$(params.test-id)/data-entry"
+
+        if [ ! -d "$DATA_DIR" ]; then
+          echo "❌ Data entry directory not found: $DATA_DIR"
+          exit 1
+        fi
+
+        cd "$DATA_DIR"
+        # 2. フォルダ内の全YAMLファイルを処理
+        for FILE in *.yaml; do
+          [ -e "$FILE" ] || continue
+          echo "🚀 Processing Data Entry: $FILE"
+
+          # YAMLからパラメータを抽出
+          API_NAME=$(grep 'api_name:' "$FILE" | sed 's/.*: "\(.*\)"/\1/')
+          ENDPOINT_PATH=$(grep 'url_path:' "$FILE" | sed 's/.*: "\(.*\)"/\1/')
+          METHOD=$(grep 'method:' "$FILE" | sed 's/.*: "\(.*\)"/\1/')
+          OK_CODE=$(grep 'ok_code:' "$FILE" | sed 's/.*: "\(.*\)"/\1/')
+          FULL_URL="https://${API_NAME}-$(params.namespace-name).${OPENSHIFT_DOMAIN}${ENDPOINT_PATH}"
+
+          echo "📡 Target URL: ${FULL_URL} (${METHOD})"
+
+          # data_list: 以降の行から JSON データを抽出して実行
+          # ※ インデントされた - '...' 形式を抽出
+          grep "\- '" "$FILE" | sed "s/  - '\(.*\)'/\1/" | while read -r JSON_DATA; do
+            if [ -z "$JSON_DATA" ]; then continue; fi
+
+            echo "📦 Sending data: $JSON_DATA"
+            
+            # curl実行
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -k -X "${METHOD}" \
+              -H "Content-Type: application/json" \
+              -d "${JSON_DATA}" "${FULL_URL}")
+            
+            if [ "$STATUS" == "$OK_CODE" ]; then
+              echo "  ✅ Success ($STATUS)"
+            else
+              echo "  ❌ Failed ($STATUS)"
+              exit 1
+            fi
+          done
+
+          # ループ内でのエラー（exit 1）を親のループに伝える
+          if [ $? -ne 0 ]; then exit 1; fi
+          echo "---------------------------------------"
+        done
+
+        echo "🎉 All data entries completed successfully."

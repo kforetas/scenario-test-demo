@@ -6,10 +6,10 @@ resources:
   - task-argocd-apply-database.yaml
   - task-argocd-apply-online-apps.yaml
   - task-argocd-delete.yaml
-  - task-call-api-from-file.yaml
+  - task-call-api-multi-data-entry.yaml
   - task-cleanup-complete-env.yaml
   - task-check-db-multi-assert.yaml
   - task-wait-for-online-readiness.yaml
   - pipeline-manual-cleanup.yaml
-  - pipeline-sample.yaml
+  - pipeline-simple-test.yaml
   - pvc-efs.yaml
