@@ -6,5 +6,6 @@ resources:
   - task-argocd-apply-database.yaml
   - task-argocd-apply-online-apps.yaml
   - task-argocd-delete.yaml
+  - task-call-api-from-file.yaml
   - pipeline-sample.yaml
   - pvc-efs.yaml

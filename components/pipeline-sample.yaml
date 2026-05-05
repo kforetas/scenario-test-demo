@@ -90,6 +90,24 @@ spec:
         - name: test-id
           value: "$(params.test-id)"
 
+    # --- Custom Area --- #
+    # Data Entry
+    - name: data-entry-shopping
+      runAfter:
+        - deploy-online-app
+      taskRef:
+        name: call-api-from-file
+      params:
+        - name: test-id
+          value: $(params.test-id)
+        - name: data-file-name
+          value: "shopping_entry.yaml"
+        - name: namespace-name
+          value: "demo-st-$(params.test-id)"
+      workspaces:
+        - name: source
+          workspace: shared-data
+
   finally:
     - name: delete-online-apps
       taskRef:

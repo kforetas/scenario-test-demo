@@ -1,0 +1,7 @@
+api_name: "shopping-entry"
+url_path: "/camel/demo/shopping_entry"
+method: "POST"
+ok_code: "200"
+data_list:
+  - '{"use_card_number": "3540000000000001", "use_date": "20250512", "shop_name": "Red Hat", "use_amount": 50000, "pay_type": "SPリボ"}'
+  - '{"use_card_number": "3540000000000001", "use_date": "20250512", "shop_name": "Red Hat", "use_amount": 10000, "pay_type": "SP1回"}'
