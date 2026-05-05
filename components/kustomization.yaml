@@ -10,6 +10,7 @@ resources:
   - task-cleanup-complete-env.yaml
   - task-check-db-multi-assert.yaml
   - task-wait-for-online-readiness.yaml
+  - task-argocd-apply-batch-apps.yaml
   - pipeline-manual-cleanup.yaml
   - pipeline-simple-test.yaml
   - pvc-efs.yaml

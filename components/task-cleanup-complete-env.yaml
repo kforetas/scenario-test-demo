@@ -23,14 +23,21 @@ spec:
           oc delete application ${APP_ONLINE} -n $(params.argocd-namespace) --wait=false
         fi
 
-        # 2. ArgoCD Applicationの削除 (Database)
+        # 2. ArgoCD Applicationの削除 (Batch App)
+        APP_BATCH="deploy-batch-apps-${NS_NAME}"
+        if oc get application ${APP_BATCH} -n $(params.argocd-namespace) &> /dev/null; then
+          echo "🗑️ Deleting ArgoCD Application: ${APP_BATCH}"
+          oc delete application ${APP_BATCH} -n $(params.argocd-namespace) --wait=false
+        fi
+
+        # 3. ArgoCD Applicationの削除 (Database)
         APP_DB="deploy-postgres-${NS_NAME}"
         if oc get application ${APP_DB} -n $(params.argocd-namespace) &> /dev/null; then
           echo "🗑️ Deleting ArgoCD Application: ${APP_DB}"
           oc delete application ${APP_DB} -n $(params.argocd-namespace) --wait=false
         fi
 
-        # 3. Namespaceの削除
+        # 4. Namespaceの削除
         if oc get project ${NS_NAME} &> /dev/null; then
           echo "🗑️ Deleting Namespace: ${NS_NAME}"
           oc delete project ${NS_NAME} --wait=false

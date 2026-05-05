@@ -130,11 +130,19 @@ spec:
           workspace: shared-data
     
     # --- 09. バッチ処理実行 ---
+    - name: run-batch-apps
+      runAfter:
+        - data-entry
+      taskRef:
+        name: argocd-apply-batch-apps
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
 
     # --- 10. データ検証（Assert） ---
     - name: db-multi-assertion
       runAfter:
-        - data-entry 
+        - run-batch-apps 
       taskRef:
         name: check-db-multi-assert
       params:
