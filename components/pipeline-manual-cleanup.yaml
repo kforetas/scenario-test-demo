@@ -5,6 +5,7 @@ metadata:
 spec:
   params:
     - name: test-id
+      default: "test-001"
       description: "削除したいテストのIDを入力"
   tasks:
     - name: execution-cleanup
