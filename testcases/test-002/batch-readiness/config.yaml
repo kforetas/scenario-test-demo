@@ -1,0 +1,3 @@
+targets:
+  - job_name: "shopping-put"
+  - job_name: "shopping-pay-create"

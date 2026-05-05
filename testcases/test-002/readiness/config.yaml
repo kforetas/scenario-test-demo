@@ -1,0 +1,3 @@
+targets:
+  - api_name: "shopping-entry"
+    health_path: "/camel/demo/shopping_entry"
