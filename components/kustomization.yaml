@@ -11,6 +11,7 @@ resources:
   - task-check-db-multi-assert.yaml
   - task-wait-for-online-readiness.yaml
   - task-argocd-apply-batch-apps.yaml
+  - task-wait-for-job-completion.yaml
   - pipeline-manual-cleanup.yaml
   - pipeline-simple-test.yaml
   - pvc-efs.yaml
