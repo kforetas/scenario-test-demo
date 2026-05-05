@@ -80,8 +80,24 @@ spec:
       workspaces:
         - name: source
           workspace: shared-data
+  
+    - name: deploy-online-apps
+      runAfter:
+        - setup-database
+      taskRef:
+        name: argocd-apply-online-apps
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
 
   finally:
+    - name: delete-online-apps
+      taskRef:
+        name: argocd-delete-application
+      params:
+        - name: application-name
+          value: "deploy-online-apps-demo-st-$(params.test-id)"
+    
     - name: cleanup-database
       taskRef:
         name: argocd-delete-application
