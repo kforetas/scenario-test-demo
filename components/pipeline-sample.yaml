@@ -31,7 +31,7 @@ spec:
         - name: DELETE_EXISTING
           value: 'true'
         - name: SUBDIRECTORY
-          value: "$(params.test-id)"
+          value: ""
         - name: SPARSE_CHECKOUT_DIRECTORIES
           value: "testcases/$(params.test-id)"
       workspaces:
@@ -65,19 +65,21 @@ spec:
         - name: test-id
           value: "$(params.test-id)"
 
-    #- name: db-init
-    #  runAfter: 
-    #    - setup-env
-    #  workspaces:
-    #    - name: source
-    #      workspace: shared-data
-    #  taskRef:
-    #    name: setup-db
-    #  params:
-    #    - name: target-ns
-    #      value: "demo-st-$(params.test-id)"
-    #    - name: test-id
-    #      value: "$(params.test-id)" 
+    - name: setup-database
+      runAfter:
+        - deploy-database
+      taskRef:
+        name: set-up-db
+      params:
+        - name: test-id
+          value: "$(params.test-id)"
+        - name: target-ns
+          value: "demo-st-$(params.test-id)"
+        - name: db-service-name
+          value: "postgresql"
+      workspaces:
+        - name: source
+          workspace: shared-data
 
   finally:
     - name: cleanup-database
