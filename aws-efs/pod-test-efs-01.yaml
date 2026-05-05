@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+ name: test-efs-01
+ namespace: test-project01
+spec:
+ volumes:
+   - name: efs-storage-vol
+     persistentVolumeClaim:
+       claimName: test-pvc-01
+ containers:
+   - name: test-efs
+     image: centos:latest
+     command: [ "/bin/bash", "-c", "--" ]
+     args: [ "while true; do touch /mnt/efs-data/verify-efs && echo 'hello efs' && sleep 30; done;" ]
+     volumeMounts:
+       - mountPath: "/mnt/efs-data"
+         name: efs-storage-vol
+     securityContext:
+       allowPrivilegeEscalation: false
+       seccompProfile:
+         type: RuntimeDefault
