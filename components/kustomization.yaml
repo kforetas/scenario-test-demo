@@ -4,5 +4,6 @@ resources:
   - task-dummy-test.yaml
   - task-setup-db.yaml
   - task-argocd-apply-database.yaml
+  - task-argocd-delete.yaml
   - pipeline-sample.yaml
   - pvc-efs.yaml
