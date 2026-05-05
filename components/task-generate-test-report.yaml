@@ -7,7 +7,7 @@ spec:
     - name: pipelinerun-name
   steps:
     - name: report
-      image: quay.io/openshift/origin-cli:latest
+      image: alpine/k8s:1.29.12
       script: |
         #!/bin/bash
         PR_NAME=$(params.pipelinerun-name)
