@@ -62,8 +62,8 @@ spec:
           T_END=$(echo $TR_JSON | jq -r '.status.completionTime // empty')
           
           if [[ -n "$T_START" && -n "$T_END" ]]; then
-            TS_SEC=$(date -d "$T_START" +%s)
-            TE_SEC=$(date -d "$T_END" +%s)
+            TS_SEC=$(date -d "$(format_date $T_START)" +%s)
+            TE_SEC=$(date -d "$(format_date $T_END)" +%s)
             T_DIFF=$((TE_SEC - TS_SEC))
             T_DUR="${T_DIFF}s"
           else
