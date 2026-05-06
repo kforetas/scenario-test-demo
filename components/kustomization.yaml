@@ -1,7 +1,6 @@
 resources:
   - task-create-ephemeral-ns.yaml
   - task-delete-ephemeral-ns.yaml
-  - task-dummy-test.yaml
   - task-setup-db.yaml
   - task-argocd-apply-database.yaml
   - task-argocd-apply-online-apps.yaml
